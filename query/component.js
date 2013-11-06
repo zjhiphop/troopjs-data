@@ -149,6 +149,10 @@ define([ "troopjs-core/component/base" ], function QueryModule(Component) {
 		"reduce" : function reduce(cache) {
 			var me = this;
 			var now = 0 | new Date().getTime() / 1000;
+			// object is fresh if: it's not collapsed and not staled.
+			var is_object_refresh = function(obj) {
+				return !(obj[_COLLAPSED] === TRUE || _EXPIRES in obj && obj[_EXPIRES] < now);
+			};
 
 			// If we're not parsed - parse
 			if (!(_AST in me)) {
@@ -184,7 +188,7 @@ define([ "troopjs-core/component/base" ], function QueryModule(Component) {
 							// Set current node
 							n = cache[x];
 							// Set RESOLVED if we're not collapsed or expired
-							o[RESOLVED] = n[_COLLAPSED] !== TRUE && !(_EXPIRES in n) || n[_EXPIRES] > now;
+							o[RESOLVED] = is_object_refresh(n);
 						}
 						else {
 							// Reset current root and node
@@ -223,9 +227,7 @@ define([ "troopjs-core/component/base" ], function QueryModule(Component) {
 									// or the objects is not expired
 									if (c[CONSTRUCTOR] !== OBJECT
 										|| !(_ID in c)
-										|| c[_COLLAPSED] !== TRUE
-										&& !(_EXPIRES in c)
-										|| c[_EXPIRES] > now) {
+										|| is_object_refresh(c)) {
 										continue;
 									}
 
@@ -245,7 +247,7 @@ define([ "troopjs-core/component/base" ], function QueryModule(Component) {
 								// Update RAW to _ID and TEXT to escaped version of RAW
 								o[TEXT] = (o[RAW] = n[_ID]).replace(RE_RAW, TO_TEXT);
 								// Set RESOLVED if we're not collapsed or expired
-								o[RESOLVED] = n[_COLLAPSED] !== TRUE && !(_EXPIRES in n) || n[_EXPIRES] > now;
+								o[RESOLVED] = is_object_refresh(n);
 							}
 						}
 						else {
